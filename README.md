@@ -14,8 +14,8 @@ Issue: Function Keys Do NOT WORK... USE number keys!
 
 ## KERNEL
 
-  - I able to Locate Simple File System and LOad Kernel Segmennts
-  - It gets stuck building bootinfo
+  - It is able to Locate Simple File Systems, Load Kernel Segmennts and build bootinfo.
+  - It cant give a display output yet... Boot Into Verbose MODE.
 
 Also it does not know what is anything... it is only made to do that and display a green screen showcasing that I am ready for the next phase but unable to get there yet!
 
