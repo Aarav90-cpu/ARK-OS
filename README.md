@@ -1,6 +1,8 @@
 # ARK-OS
 A BOOTLOADER+KERNEL+GUI Giving Custom OS. (ONLY SUPPORT 14-gr0000TU [KERNEL])
 
+Clone the repo and run `cd "path/to/ARK-OS/bootloader" && make && ./run.sh`
+
 ## BootLoader
 
   - Shows ARKOS logo with white background
