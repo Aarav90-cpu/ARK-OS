@@ -1,0 +1,3 @@
+is it plugged in
+
+reports wether it is plugged in but not charging

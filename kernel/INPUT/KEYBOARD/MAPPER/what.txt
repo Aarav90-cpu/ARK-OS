@@ -1,0 +1,6 @@
+Tell the user to press every single key shown to map out the keyboard!
+
+SO if it is doolar symbol the user presses SHIFT+4 it means when SHIFT+4 is pressed the user means the dollar symbol... th ekenrl send  this to the OS and it gets typed inn or and application takes it as a shortcut
+
+Uppercase A the the userr presses SHIFT+A key
+Lowercase a then the use is just a
