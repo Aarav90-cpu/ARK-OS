@@ -114,22 +114,35 @@ void LoadKernel(void) {
         }
     }
 
-    UINTN mapSize = 0, mapKey, descriptorSize;
-    uint32_t descriptorVersion;
-    gBS->GetMemoryMap(&mapSize, NULL, &mapKey, &descriptorSize, &descriptorVersion);
-    mapSize += 4096; 
-    gBS->AllocatePool(2, mapSize, &bootInfo->MemoryMap);
-    status = gBS->GetMemoryMap(&mapSize, bootInfo->MemoryMap, &mapKey, &descriptorSize, &descriptorVersion);
-    bootInfo->MemoryMapSize = mapSize;
-    bootInfo->MemoryMapDescriptorSize = descriptorSize;
-
-    if (gVerbose) Print(u"Exiting Boot Services...\r\n");
-    status = gBS->ExitBootServices(gImageHandle, mapKey);
-    if (EFI_ERROR(status)) {
-        // Retry once with updated mapkey
-        gBS->GetMemoryMap(&mapSize, bootInfo->MemoryMap, &mapKey, &descriptorSize, &descriptorVersion);
-        status = gBS->ExitBootServices(gImageHandle, mapKey);
+    UINTN mapSize = 0, mapKey, descSize;
+    uint32_t descVersion;
+    void *mmap = NULL;
+    UINTN allocatedMapSize = 0;
+    
+    while (1) {
+        mapSize = allocatedMapSize;
+        status = gBS->GetMemoryMap(&mapSize, mmap, &mapKey, &descSize, &descVersion);
+        
+        if (status == EFI_BUFFER_TOO_SMALL) {
+            allocatedMapSize = mapSize + descSize * 16; // allocate extra padding
+            if (mmap) gBS->FreePool(mmap);
+            gBS->AllocatePool(2, allocatedMapSize, (void**)&mmap);
+            
+            mapSize = allocatedMapSize;
+            status = gBS->GetMemoryMap(&mapSize, mmap, &mapKey, &descSize, &descVersion);
+        }
+        
+        if (!EFI_ERROR(status)) {
+            status = gBS->ExitBootServices(gImageHandle, mapKey);
+            if (!EFI_ERROR(status)) {
+                break; // Successfully exited boot services
+            }
+        }
     }
+    
+    bootInfo->MemoryMap = mmap;
+    bootInfo->MemoryMapSize = mapSize;
+    bootInfo->MemoryMapDescriptorSize = descSize;
 
     void __attribute__((sysv_abi)) (*kernel_main)(BootInfo*) = (void __attribute__((sysv_abi)) (*)(BootInfo*))kernelEntry;
     kernel_main(bootInfo);
