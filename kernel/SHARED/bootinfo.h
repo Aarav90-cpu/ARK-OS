@@ -3,6 +3,7 @@
 
 typedef struct {
     uint32_t *BaseAddress;
+    uint32_t *BackBuffer;
     uint32_t BufferSize;
     uint32_t Width;
     uint32_t Height;

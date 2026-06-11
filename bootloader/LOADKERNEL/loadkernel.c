@@ -23,6 +23,18 @@ int memcmpEfi(const void *s1, const void *s2, UINTN n) {
     return 0;
 }
 
+void PrintHex(uint64_t val) {
+    uint16_t buf[19];
+    buf[0] = u'0'; buf[1] = u'x'; buf[18] = 0;
+    for (int i = 17; i >= 2; i--) {
+        int nibble = val & 0xF;
+        if (nibble < 10) buf[i] = u'0' + nibble;
+        else buf[i] = u'A' + (nibble - 10);
+        val >>= 4;
+    }
+    Print(buf);
+}
+
 void LoadKernel(void) {
     ClearScreen(EFI_BACKGROUND_BLACK);
     if (gVerbose) Print(u"Locating Simple File System...\r\n");
@@ -76,10 +88,12 @@ void LoadKernel(void) {
 
     for (int i = 0; i < header.e_phnum; i++) {
         if (phdrs[i].p_type == PT_LOAD) {
-            kernelFile->SetPosition(kernelFile, phdrs[i].p_offset);
+            status = kernelFile->SetPosition(kernelFile, phdrs[i].p_offset);
+            if (EFI_ERROR(status)) { Print(u"SetPosition Failed!\r\n"); while(1); }
             UINTN size = phdrs[i].p_filesz;
             uint64_t dest = baseAddr + (phdrs[i].p_vaddr - minAddr);
-            kernelFile->Read(kernelFile, &size, (void*)dest);
+            status = kernelFile->Read(kernelFile, &size, (void*)dest);
+            if (EFI_ERROR(status)) { Print(u"Read Failed!\r\n"); while(1); }
             
             uint8_t *bss = (uint8_t*)(dest + size);
             for (UINTN j = 0; j < phdrs[i].p_memsz - size; j++) bss[j] = 0;
@@ -91,7 +105,8 @@ void LoadKernel(void) {
     if (gVerbose) Print(u"Building BootInfo...\r\n");
 
     BootInfo *bootInfo;
-    gBS->AllocatePool(2, sizeof(BootInfo), (void**)&bootInfo);
+    status = gBS->AllocatePool(2, sizeof(BootInfo), (void**)&bootInfo);
+    if (EFI_ERROR(status)) { Print(u"AllocatePool Failed!\r\n"); while(1); }
     
     // Zero out BootInfo to prevent garbage data
     uint8_t* binfoPtr = (uint8_t*)bootInfo;
@@ -103,6 +118,10 @@ void LoadKernel(void) {
         bootInfo->Framebuffer.Width = gGOP->Mode->Info->HorizontalResolution;
         bootInfo->Framebuffer.Height = gGOP->Mode->Info->VerticalResolution;
         bootInfo->Framebuffer.PixelsPerScanLine = gGOP->Mode->Info->PixelsPerScanLine;
+        
+        // Allocate a back buffer identical in size to the frame buffer
+        status = gBS->AllocatePool(2, bootInfo->Framebuffer.BufferSize, (void**)&bootInfo->Framebuffer.BackBuffer);
+        if (EFI_ERROR(status)) { Print(u"BackBuffer Allocation Failed!\r\n"); while(1); }
     }
 
     bootInfo->RSDP = NULL;
@@ -112,6 +131,15 @@ void LoadKernel(void) {
             bootInfo->RSDP = gST->ConfigurationTable[i].VendorTable;
             break;
         }
+    }
+
+    if (gVerbose) {
+        Print(u"Kernel Entry: ");
+        PrintHex(kernelEntry);
+        Print(u"  |  Framebuffer Base: ");
+        PrintHex((uint64_t)bootInfo->Framebuffer.BaseAddress);
+        Print(u"\r\nExiting Boot Services...\r\n");
+        gBS->Stall(5000000); // 5 seconds
     }
 
     UINTN mapSize = 0, mapKey, descSize;
