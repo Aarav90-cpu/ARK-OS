@@ -14,14 +14,14 @@ ALSO, JUST TO CLAIM IT
     
   <img width="513" height="315" alt="image" src="https://github.com/user-attachments/assets/c9f56459-5988-410d-b8a1-425e7c8b66bd" />
 
-Issue: Function Keys Do NOT WORK... USE number keys!
+ STATUS = 100%
 
 ## KERNEL
 
   - It is able to Locate Simple File Systems, Load Kernel Segmennts and build bootinfo.
-  - It cant give a display output yet... Boot Into Verbose MODE.
+  - It can give a display output.
 
-Also it does not know what is anything... it is only made to do that and display a green screen showcasing that I am ready for the next phase but unable to get there yet!
+Takes control over from UEFI and becomes big boss of your system!
 
 ## GUI
 

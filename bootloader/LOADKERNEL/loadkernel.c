@@ -89,11 +89,25 @@ void LoadKernel(void) {
     for (int i = 0; i < header.e_phnum; i++) {
         if (phdrs[i].p_type == PT_LOAD) {
             status = kernelFile->SetPosition(kernelFile, phdrs[i].p_offset);
-            if (EFI_ERROR(status)) { Print(u"SetPosition Failed!\r\n"); while(1); }
+            if (EFI_ERROR(status)) { while(1); }
+
             UINTN size = phdrs[i].p_filesz;
             uint64_t dest = baseAddr + (phdrs[i].p_vaddr - minAddr);
-            status = kernelFile->Read(kernelFile, &size, (void*)dest);
-            if (EFI_ERROR(status)) { Print(u"Read Failed!\r\n"); while(1); }
+            
+            if (size > 0) {
+                void *tempBuf;
+                status = gBS->AllocatePool(2, size, &tempBuf);
+                if (EFI_ERROR(status)) { while(1); }
+
+                status = kernelFile->Read(kernelFile, &size, tempBuf);
+                if (EFI_ERROR(status)) { while(1); }
+
+                uint8_t *src = (uint8_t*)tempBuf;
+                volatile uint8_t *dst = (volatile uint8_t*)dest;
+                for (UINTN j = 0; j < size; j++) dst[j] = src[j];
+
+                gBS->FreePool(tempBuf);
+            }
 
             uint8_t *bss = (uint8_t*)(dest + size);
             for (UINTN j = 0; j < phdrs[i].p_memsz - size; j++) bss[j] = 0;
@@ -101,8 +115,6 @@ void LoadKernel(void) {
     }
 
     uint64_t kernelEntry = baseAddr + (header.e_entry - minAddr);
-
-    if (gVerbose) Print(u"Building BootInfo...\r\n");
 
     BootInfo *bootInfo;
     status = gBS->AllocatePool(2, sizeof(BootInfo), (void**)&bootInfo);
@@ -118,8 +130,7 @@ void LoadKernel(void) {
         bootInfo->Framebuffer.Height = gGOP->Mode->Info->VerticalResolution;
         bootInfo->Framebuffer.PixelsPerScanLine = gGOP->Mode->Info->PixelsPerScanLine;
 
-        status = gBS->AllocatePool(2, bootInfo->Framebuffer.BufferSize, (void**)&bootInfo->Framebuffer.BackBuffer);
-        if (EFI_ERROR(status)) { Print(u"BackBuffer Allocation Failed!\r\n"); while(1); }
+        bootInfo->Framebuffer.BackBuffer = NULL;
     }
 
     bootInfo->RSDP = NULL;
@@ -129,15 +140,6 @@ void LoadKernel(void) {
             bootInfo->RSDP = gST->ConfigurationTable[i].VendorTable;
             break;
         }
-    }
-
-    if (gVerbose) {
-        Print(u"Kernel Entry: ");
-        PrintHex(kernelEntry);
-        Print(u"  |  Framebuffer Base: ");
-        PrintHex((uint64_t)bootInfo->Framebuffer.BaseAddress);
-        Print(u"\r\nExiting Boot Services...\r\n");
-        gBS->Stall(5000000);
     }
 
     UINTN mapSize = 0, mapKey, descSize;
