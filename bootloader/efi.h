@@ -87,9 +87,7 @@ typedef struct {
 typedef struct {
     uint32_t Attributes;
     uint16_t FilePathListLength;
-    // uint16_t Description[];
-    // EFI_DEVICE_PATH_PROTOCOL FilePathList[];
-    // uint8_t OptionalData[];
+
 } EFI_LOAD_OPTION;
 
 typedef struct {
@@ -132,7 +130,6 @@ struct EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL {
 #define TPL_CALLBACK 8
 #define TimerRelative 1
 
-// Colors for SetAttribute
 #define EFI_BLACK 0x00
 #define EFI_BLUE 0x01
 #define EFI_GREEN 0x02
@@ -170,23 +167,23 @@ typedef struct {
 typedef struct EFI_BOOT_SERVICES EFI_BOOT_SERVICES;
 struct EFI_BOOT_SERVICES {
     EFI_TABLE_HEADER Hdr;
-    // Task Priority Services
+
     void *RaiseTPL;
     void *RestoreTPL;
-    // Memory Services
+
     EFI_STATUS (*AllocatePages)(uint32_t Type, uint32_t MemoryType, UINTN Pages, void *Memory);
     EFI_STATUS (*FreePages)(void *Memory, UINTN Pages);
     EFI_STATUS (*GetMemoryMap)(UINTN *MemoryMapSize, void *MemoryMap, UINTN *MapKey, UINTN *DescriptorSize, uint32_t *DescriptorVersion);
     EFI_STATUS (*AllocatePool)(uint32_t PoolType, UINTN Size, void **Buffer);
     EFI_STATUS (*FreePool)(void *Buffer);
-    // Event & Timer Services
+
     EFI_STATUS (*CreateEvent)(uint32_t Type, UINTN NotifyTpl, void *NotifyFunction, void *NotifyContext, void **Event);
     EFI_STATUS (*SetTimer)(void *Event, uint32_t Type, uint64_t TriggerTime);
     EFI_STATUS (*WaitForEvent)(UINTN NumberOfEvents, void **Event, UINTN *Index);
     EFI_STATUS (*SignalEvent)(void *Event);
     EFI_STATUS (*CloseEvent)(void *Event);
     EFI_STATUS (*CheckEvent)(void *Event);
-    // Protocol Handler Services
+
     void *InstallProtocolInterface;
     void *ReinstallProtocolInterface;
     void *UninstallProtocolInterface;
@@ -196,28 +193,28 @@ struct EFI_BOOT_SERVICES {
     EFI_STATUS (*LocateHandle)(uint32_t SearchType, EFI_GUID *Protocol, void *SearchKey, UINTN *BufferSize, EFI_HANDLE *Buffer);
     void *LocateDevicePath;
     void *InstallConfigurationTable;
-    // Image Services
+
     EFI_STATUS (*LoadImage)(bool BootPolicy, EFI_HANDLE ParentImageHandle, void *DevicePath, void *SourceBuffer, UINTN SourceSize, EFI_HANDLE *ImageHandle);
     EFI_STATUS (*StartImage)(EFI_HANDLE ImageHandle, UINTN *ExitDataSize, uint16_t **ExitData);
     void *Exit;
     void *UnloadImage;
     EFI_STATUS (*ExitBootServices)(EFI_HANDLE ImageHandle, UINTN MapKey);
-    // Misc
+
     void *GetNextMonotonicCount;
     EFI_STATUS (*Stall)(UINTN Microseconds);
     void *SetWatchdogTimer;
-    // DriverSupport Services
+
     void *ConnectController;
     void *DisconnectController;
-    // Open and Close Protocol Services
+
     void *OpenProtocol;
     void *CloseProtocol;
     void *OpenProtocolInformation;
-    // Library Services
+
     EFI_STATUS (*ProtocolsPerHandle)(EFI_HANDLE Handle, EFI_GUID ***ProtocolBuffer, UINTN *ProtocolBufferCount);
     void *LocateHandleBuffer;
     EFI_STATUS (*LocateProtocol)(EFI_GUID *Protocol, void *Registration, void **Interface);
-    // ... we can stop here for basic needs
+
 };
 
 typedef struct EFI_RUNTIME_SERVICES EFI_RUNTIME_SERVICES;
@@ -239,7 +236,6 @@ struct EFI_RUNTIME_SERVICES {
     void *QueryVariableInfo;
 };
 
-// Reset types
 #define EfiResetCold 0
 #define EfiResetWarm 1
 #define EfiResetShutdown 2
@@ -266,7 +262,6 @@ typedef struct {
     EFI_CONFIGURATION_TABLE *ConfigurationTable;
 } EFI_SYSTEM_TABLE;
 
-// Graphics Output Protocol
 typedef struct {
     uint32_t RedMask;
     uint32_t GreenMask;
@@ -308,13 +303,11 @@ struct EFI_GRAPHICS_OUTPUT_PROTOCOL {
     EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE *Mode;
 };
 
-// Global variables for easy access
 extern EFI_SYSTEM_TABLE *gST;
 extern EFI_BOOT_SERVICES *gBS;
 extern EFI_RUNTIME_SERVICES *gRT;
 extern EFI_HANDLE gImageHandle;
 
-// Key scancodes
 #define SCAN_NULL 0x00
 #define SCAN_UP 0x01
 #define SCAN_DOWN 0x02
@@ -337,3 +330,4 @@ extern EFI_HANDLE gImageHandle;
 #define SCAN_F9 0x13
 #define SCAN_F10 0x14
 #define SCAN_ESC 0x17
+

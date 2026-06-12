@@ -7,3 +7,4 @@ void HandleF3(void) {
     gBS->Stall(1000000);
     gRT->ResetSystem(EfiResetShutdown, EFI_SUCCESS, 0, NULL);
 }
+

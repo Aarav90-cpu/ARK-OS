@@ -22,7 +22,7 @@ void HandleF4(void) {
     EFI_GUID globalGuid = EFI_GLOBAL_VARIABLE;
     UINTN size = 0;
     EFI_STATUS status = gRT->GetVariable(u"BootOrder", &globalGuid, NULL, &size, NULL);
-    
+
     if (status != EFI_BUFFER_TOO_SMALL || size == 0) {
         Print(u"  No BootOrder variable found in NVRAM!\r\n");
         Print(u"\r\n  Press any key to return...");
@@ -36,7 +36,7 @@ void HandleF4(void) {
     gRT->GetVariable(u"BootOrder", &globalGuid, NULL, &size, bootOrder);
 
     UINTN numOptions = size / sizeof(uint16_t);
-    if (numOptions > 9) numOptions = 9; // Limit to 0-9 for easy keyboard selection
+    if (numOptions > 9) numOptions = 9;
 
     for (UINTN i = 0; i < numOptions; i++) {
         uint16_t varName[9];
@@ -48,14 +48,14 @@ void HandleF4(void) {
             uint8_t *optData = NULL;
             gBS->AllocatePool(2, optSize, (void**)&optData);
             gRT->GetVariable(varName, &globalGuid, NULL, &optSize, optData);
-            
+
             uint16_t *desc = (uint16_t*)(optData + sizeof(EFI_LOAD_OPTION));
-            
+
             uint16_t prefix[7] = { ' ', ' ', '[', '0' + i, ']', ' ', 0 };
             Print(prefix);
             Print(desc);
             Print(u"\r\n");
-            
+
             gBS->FreePool(optData);
         }
     }
@@ -74,12 +74,12 @@ void HandleF4(void) {
             if (key.UnicodeChar >= '0' && key.UnicodeChar < '0' + numOptions) {
                 int selected = key.UnicodeChar - '0';
                 uint16_t bootNext = bootOrder[selected];
-                
+
                 Print(u"\r\n  Setting BootNext and rebooting...\r\n");
-                
+
                 uint32_t attr = EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS;
                 gRT->SetVariable(u"BootNext", &globalGuid, attr, sizeof(uint16_t), &bootNext);
-                
+
                 gRT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
             } else if (key.ScanCode == SCAN_ESC) {
                 break;
@@ -88,3 +88,4 @@ void HandleF4(void) {
         gBS->Stall(10000);
     }
 }
+

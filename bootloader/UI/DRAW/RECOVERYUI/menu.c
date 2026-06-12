@@ -10,10 +10,10 @@
 #include "../../../INPUT/KEYBOARD/INPUT_FUNCTIONKEY/F7/f7.h"
 
 void DrawMenuBox(void) {
-    ClearScreen(EFI_BACKGROUND_BLUE >> 4); // Clear screen to blue
+    ClearScreen(EFI_BACKGROUND_BLUE >> 4);
 
     gST->ConOut->SetAttribute(gST->ConOut, EFI_WHITE | EFI_BACKGROUND_BLUE);
-    
+
     Print(u"\r\n\r\n");
     Print(u"      =======================================================\r\n");
     Print(u"      ||               ARK OS RECOVERY MENU                ||\r\n");
@@ -39,14 +39,13 @@ void ShowRecoveryMenu(void) {
     while (menuActive) {
         DrawMenuBox();
 
-        // Wait for key
         EFI_INPUT_KEY key;
         while (true) {
             EFI_STATUS status = gST->ConIn->ReadKeyStroke(gST->ConIn, &key);
             if (!EFI_ERROR(status)) {
                 break;
             }
-            gBS->Stall(10000); // 10ms
+            gBS->Stall(10000);
         }
 
         if (key.ScanCode == SCAN_F1 || key.UnicodeChar == '1') HandleF1();
@@ -57,7 +56,7 @@ void ShowRecoveryMenu(void) {
         else if (key.ScanCode == SCAN_F6 || key.UnicodeChar == '6') HandleF6();
         else if (key.ScanCode == SCAN_F7 || key.UnicodeChar == '7') menuActive = HandleF7();
     }
-    
-    // Reset to black background
+
     ClearScreen(EFI_BACKGROUND_BLACK);
 }
+

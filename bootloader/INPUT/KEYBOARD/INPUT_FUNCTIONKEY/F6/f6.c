@@ -6,3 +6,4 @@
 void HandleF6(void) {
     ToggleVerboseMode();
 }
+

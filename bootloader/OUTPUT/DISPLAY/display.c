@@ -5,12 +5,9 @@ EFI_GRAPHICS_OUTPUT_PROTOCOL *gGOP = NULL;
 EFI_STATUS InitDisplay(void) {
     EFI_GUID gopGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
     EFI_STATUS status = gBS->LocateProtocol(&gopGuid, NULL, (void**)&gGOP);
-    
-    // Attempt to set the highest resolution mode
+
     if (status == EFI_SUCCESS && gGOP != NULL) {
-        // We'll just stick to whatever mode firmware set us up in for safety,
-        // or optionally loop through and set a specific mode. 
-        // For now, keeping the default mode works best across VMs and laptops.
+
     }
     return status;
 }
@@ -28,7 +25,6 @@ void ClearScreen(uint8_t bgColor) {
     }
 }
 
-// Minimal BMP header parsing
 #pragma pack(push, 1)
 typedef struct {
     uint16_t bfType;
@@ -52,27 +48,26 @@ EFI_STATUS DrawBmpCentered(void* bmpBuffer, UINTN bufferSize) {
     if (!gGOP || !bmpBuffer) return EFI_UNSUPPORTED;
 
     BMP_FILE_HEADER* fileHdr = (BMP_FILE_HEADER*)bmpBuffer;
-    if (fileHdr->bfType != 0x4D42) { // 'BM'
+    if (fileHdr->bfType != 0x4D42) {
         return EFI_UNSUPPORTED;
     }
 
     BMP_INFO_HEADER* infoHdr = (BMP_INFO_HEADER*)((uint8_t*)bmpBuffer + sizeof(BMP_FILE_HEADER));
     if (infoHdr->biBitCount != 24 && infoHdr->biBitCount != 32) {
-        // Only supporting 24-bit or 32-bit for simplicity
+
         return EFI_UNSUPPORTED;
     }
 
     uint8_t* pixelData = (uint8_t*)bmpBuffer + fileHdr->bfOffBits;
     UINTN width = (UINTN)infoHdr->biWidth;
     UINTN height = (UINTN)(infoHdr->biHeight < 0 ? -infoHdr->biHeight : infoHdr->biHeight);
-    bool flipY = (infoHdr->biHeight > 0); // standard BMPs are bottom-up
+    bool flipY = (infoHdr->biHeight > 0);
 
     UINTN screenW = gGOP->Mode->Info->HorizontalResolution;
     UINTN screenH = gGOP->Mode->Info->VerticalResolution;
 
-    // Allocate memory for GOP Blt buffer (needs 32-bit pixels)
     uint32_t* bltBuffer = NULL;
-    EFI_STATUS status = gBS->AllocatePool(2, width * height * sizeof(uint32_t), (void**)&bltBuffer); // 2 = EfiLoaderData
+    EFI_STATUS status = gBS->AllocatePool(2, width * height * sizeof(uint32_t), (void**)&bltBuffer);
     if (EFI_ERROR(status)) return status;
 
     UINTN padding = (4 - ((width * (infoHdr->biBitCount / 8)) % 4)) % 4;
@@ -91,13 +86,12 @@ EFI_STATUS DrawBmpCentered(void* bmpBuffer, UINTN bufferSize) {
     UINTN destX = (screenW > width) ? (screenW - width) / 2 : 0;
     UINTN destY = (screenH > height) ? (screenH - height) / 2 : 0;
 
-    // Fill the screen with white background first (EfiBltVideoFill = 0)
-    uint32_t whitePixel = 0x00FFFFFF; // White
+    uint32_t whitePixel = 0x00FFFFFF;
     gGOP->Blt(gGOP, &whitePixel, 0, 0, 0, 0, 0, screenW, screenH, 0);
 
-    // Draw the BMP on top
     status = gGOP->Blt(gGOP, bltBuffer, 2, 0, 0, destX, destY, width, height, 0);
 
     gBS->FreePool(bltBuffer);
     return status;
 }
+

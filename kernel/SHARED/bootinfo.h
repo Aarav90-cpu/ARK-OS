@@ -12,8 +12,9 @@ typedef struct {
 
 typedef struct {
     FramebufferInfo Framebuffer;
-    void* RSDP; // Pointer to ACPI RSDP table
+    void* RSDP;
     void* MemoryMap;
     uint64_t MemoryMapSize;
     uint64_t MemoryMapDescriptorSize;
 } BootInfo;
+

@@ -23,5 +23,6 @@ qemu-system-x86_64 \
     -drive if=pflash,format=raw,readonly=on,file=/usr/share/edk2/x64/OVMF_CODE.4m.fd \
     -drive if=pflash,format=raw,file=OVMF_VARS.fd \
     -drive format=raw,file=fat:rw:image \
-    -m 512 \
+    -m 2048M \
+    -smp cores=4,threads=2,sockets=1 \
     -vga std

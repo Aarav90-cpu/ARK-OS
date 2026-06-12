@@ -3,7 +3,7 @@
 #include "efi.h"
 #include "../../kernel/UEFI/elf.h"
 #include "../../kernel/SHARED/bootinfo.h"
-// "Is verbose=default, default=false" as per what.txt
+
 static bool gVerbose = false;
 
 bool GetVerboseMode(void) {
@@ -55,7 +55,7 @@ void LoadKernel(void) {
     Elf64_Ehdr header;
     UINTN headerSize = sizeof(Elf64_Ehdr);
     status = kernelFile->Read(kernelFile, &headerSize, &header);
-    
+
     if (memcmpEfi(header.e_ident, "\x7f""ELF", 4) != 0) {
         Print(u"Not a valid ELF file.\r\n"); while(1);
     }
@@ -65,7 +65,7 @@ void LoadKernel(void) {
     Elf64_Phdr *phdrs;
     UINTN phdrsSize = header.e_phnum * header.e_phentsize;
     gBS->AllocatePool(2, phdrsSize, (void**)&phdrs);
-    
+
     kernelFile->SetPosition(kernelFile, header.e_phoff);
     kernelFile->Read(kernelFile, &phdrsSize, phdrs);
 
@@ -80,7 +80,7 @@ void LoadKernel(void) {
 
     UINTN totalPages = (maxAddr - minAddr + 0xFFF) / 0x1000;
     uint64_t baseAddr = 0;
-    status = gBS->AllocatePages(0, 1, totalPages, &baseAddr); // 0 = AllocateAnyPages, 1 = EfiLoaderCode
+    status = gBS->AllocatePages(0, 1, totalPages, &baseAddr);
     if (EFI_ERROR(status)) {
         Print(u"Failed to allocate memory for kernel!\r\n");
         while(1);
@@ -94,7 +94,7 @@ void LoadKernel(void) {
             uint64_t dest = baseAddr + (phdrs[i].p_vaddr - minAddr);
             status = kernelFile->Read(kernelFile, &size, (void*)dest);
             if (EFI_ERROR(status)) { Print(u"Read Failed!\r\n"); while(1); }
-            
+
             uint8_t *bss = (uint8_t*)(dest + size);
             for (UINTN j = 0; j < phdrs[i].p_memsz - size; j++) bss[j] = 0;
         }
@@ -107,19 +107,17 @@ void LoadKernel(void) {
     BootInfo *bootInfo;
     status = gBS->AllocatePool(2, sizeof(BootInfo), (void**)&bootInfo);
     if (EFI_ERROR(status)) { Print(u"AllocatePool Failed!\r\n"); while(1); }
-    
-    // Zero out BootInfo to prevent garbage data
+
     uint8_t* binfoPtr = (uint8_t*)bootInfo;
     for (UINTN i = 0; i < sizeof(BootInfo); i++) binfoPtr[i] = 0;
-    
+
     if (gGOP && gGOP->Mode) {
         bootInfo->Framebuffer.BaseAddress = (uint32_t*)gGOP->Mode->FrameBufferBase;
         bootInfo->Framebuffer.BufferSize = gGOP->Mode->FrameBufferSize;
         bootInfo->Framebuffer.Width = gGOP->Mode->Info->HorizontalResolution;
         bootInfo->Framebuffer.Height = gGOP->Mode->Info->VerticalResolution;
         bootInfo->Framebuffer.PixelsPerScanLine = gGOP->Mode->Info->PixelsPerScanLine;
-        
-        // Allocate a back buffer identical in size to the frame buffer
+
         status = gBS->AllocatePool(2, bootInfo->Framebuffer.BufferSize, (void**)&bootInfo->Framebuffer.BackBuffer);
         if (EFI_ERROR(status)) { Print(u"BackBuffer Allocation Failed!\r\n"); while(1); }
     }
@@ -139,41 +137,34 @@ void LoadKernel(void) {
         Print(u"  |  Framebuffer Base: ");
         PrintHex((uint64_t)bootInfo->Framebuffer.BaseAddress);
         Print(u"\r\nExiting Boot Services...\r\n");
-        gBS->Stall(5000000); // 5 seconds
+        gBS->Stall(5000000);
     }
 
     UINTN mapSize = 0, mapKey, descSize;
     uint32_t descVersion;
     void *mmap = NULL;
-    UINTN allocatedMapSize = 0;
-    
-    while (1) {
-        mapSize = allocatedMapSize;
-        status = gBS->GetMemoryMap(&mapSize, mmap, &mapKey, &descSize, &descVersion);
-        
-        if (status == EFI_BUFFER_TOO_SMALL) {
-            allocatedMapSize = mapSize + descSize * 16; // allocate extra padding
-            if (mmap) gBS->FreePool(mmap);
-            gBS->AllocatePool(2, allocatedMapSize, (void**)&mmap);
-            
-            mapSize = allocatedMapSize;
-            status = gBS->GetMemoryMap(&mapSize, mmap, &mapKey, &descSize, &descVersion);
-        }
-        
-        if (!EFI_ERROR(status)) {
-            status = gBS->ExitBootServices(gImageHandle, mapKey);
-            if (!EFI_ERROR(status)) {
-                break; // Successfully exited boot services
-            }
-        }
+    gBS->GetMemoryMap(&mapSize, NULL, &mapKey, &descSize, &descVersion);
+    mapSize += 4096; // Safe padding instead of relying on descSize
+    status = gBS->AllocatePool(2, mapSize, &mmap);
+    if (EFI_ERROR(status)) { Print(u"MemMap Alloc Fail!\r\n"); while(1); }
+    gBS->GetMemoryMap(&mapSize, mmap, &mapKey, &descSize, &descVersion);
+
+    status = gBS->ExitBootServices(gImageHandle, mapKey);
+    if (EFI_ERROR(status)) {
+        gBS->GetMemoryMap(&mapSize, mmap, &mapKey, &descSize, &descVersion);
+        status = gBS->ExitBootServices(gImageHandle, mapKey);
     }
-    
+
     bootInfo->MemoryMap = mmap;
     bootInfo->MemoryMapSize = mapSize;
     bootInfo->MemoryMapDescriptorSize = descSize;
 
+    uint32_t *fb = (uint32_t *)bootInfo->Framebuffer.BaseAddress;
+    for (int i = 0; i < 50000; i++) fb[i] = 0x000000FF;
+
     void __attribute__((sysv_abi)) (*kernel_main)(BootInfo*) = (void __attribute__((sysv_abi)) (*)(BootInfo*))kernelEntry;
     kernel_main(bootInfo);
-    
+
     while(1);
 }
+

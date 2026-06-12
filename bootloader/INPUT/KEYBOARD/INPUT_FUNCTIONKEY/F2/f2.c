@@ -7,3 +7,4 @@ void HandleF2(void) {
     gBS->Stall(1000000);
     gRT->ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL);
 }
+

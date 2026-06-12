@@ -16,7 +16,7 @@ void HandleF5(void) {
 
     uint16_t buffer[256];
     UINTN index = 0;
-    
+
     EFI_INPUT_KEY key;
     while (true) {
         EFI_STATUS status = gST->ConIn->ReadKeyStroke(gST->ConIn, &key);
@@ -24,8 +24,7 @@ void HandleF5(void) {
             if (key.UnicodeChar == '\r' || key.UnicodeChar == '\n') {
                 buffer[index] = 0;
                 Print(u"\r\n");
-                
-                // Process command
+
                 if (index > 0) {
                     if (StrCmpEfi(buffer, u"exit")) {
                         break;
@@ -41,7 +40,7 @@ void HandleF5(void) {
                         Print(u"\r\n");
                     }
                 }
-                
+
                 index = 0;
                 Print(u"> ");
             } else if (key.UnicodeChar == '\b') {
@@ -62,3 +61,4 @@ void HandleF5(void) {
         gBS->Stall(10000);
     }
 }
+
