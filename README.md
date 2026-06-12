@@ -20,6 +20,13 @@ ALSO, JUST TO CLAIM IT
 
   - It is able to Locate Simple File Systems, Load Kernel Segmennts and build bootinfo.
   - It can give a display output.
+  - Text Rendering: CHECK
+  - Global Descriptor Table (GDT) & Interrupt Descriptor Table (IDT): CHECK
+  - Memory Management (Paging & Physical Allocator): CHECK
+  - Hardware Initialization: CHECK
+  - Motherboard / ACPI Parsing: CHECK
+  - Virtual Memory Management: CHECK
+  - Advanced CPU Identification: (13 13th GEN Intel CPU ONLY)
 
 Takes control over from UEFI and becomes big boss of your system!
 

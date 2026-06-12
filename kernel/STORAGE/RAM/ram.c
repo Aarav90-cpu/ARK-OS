@@ -63,17 +63,23 @@ void RAM_Init(BootInfo *binfo) {
 
     for (uint64_t i = 0; i < mapEntries; i++) {
         EFI_MEMORY_DESCRIPTOR* desc = (EFI_MEMORY_DESCRIPTOR*)((uint8_t*)binfo->MemoryMap + (i * binfo->MemoryMapDescriptorSize));
-        uint64_t top = desc->PhysicalStart + (desc->NumberOfPages * 4096);
-        if (top > maxAddress) maxAddress = top;
+        // Ignore MMIO and Reserved regions when calculating max RAM address
+        if (desc->Type != 0 && desc->Type != 11 && desc->Type != 12) {
+            uint64_t top = desc->PhysicalStart + (desc->NumberOfPages * 4096);
+            if (top > maxAddress) maxAddress = top;
+        }
     }
 
     gTotalPages = maxAddress / 4096;
     gBitmapSize = gTotalPages / 8;
     if (gBitmapSize == 0) gBitmapSize = 1;
 
+    gMemoryBitmap = NULL;
+
     for (uint64_t i = 0; i < mapEntries; i++) {
         EFI_MEMORY_DESCRIPTOR* desc = (EFI_MEMORY_DESCRIPTOR*)((uint8_t*)binfo->MemoryMap + (i * binfo->MemoryMapDescriptorSize));
-        if (desc->Type == EFI_CONVENTIONAL_MEMORY && (desc->NumberOfPages * 4096) >= gBitmapSize) {
+        // Allocate bitmap above 1MB to avoid 0x0 (which is treated as NULL) and legacy PC areas
+        if (desc->Type == EFI_CONVENTIONAL_MEMORY && (desc->NumberOfPages * 4096) >= gBitmapSize && desc->PhysicalStart >= 0x100000) {
             gMemoryBitmap = (uint8_t*)desc->PhysicalStart;
             break;
         }
@@ -101,6 +107,12 @@ void RAM_Init(BootInfo *binfo) {
     uint64_t bitmapStartIndex = (uint64_t)gMemoryBitmap / 4096;
     for (uint64_t i = 0; i < bitmapPageCount; i++) {
         BitmapSet(bitmapStartIndex + i);
+        gFreePages--;
+    }
+
+    // Reserve Page 0 so PMM_AllocPage() never returns NULL (0)
+    if (!BitmapTest(0)) {
+        BitmapSet(0);
         gFreePages--;
     }
 

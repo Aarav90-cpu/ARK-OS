@@ -25,6 +25,9 @@ fi
 
 echo "Starting ARK OS in QEMU..."
 qemu-system-x86_64 \
+    -machine q35 \
+    -enable-kvm \
+    -cpu host \
     -drive if=pflash,format=raw,readonly=on,file=/usr/share/edk2/x64/OVMF_CODE.4m.fd \
     -drive if=pflash,format=raw,file=OVMF_VARS.fd \
     -drive format=raw,file=disk.img \
