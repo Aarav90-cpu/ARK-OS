@@ -7,6 +7,15 @@ ALSO, JUST TO CLAIM IT
 
 `_One of India's Few Independent, Open-Source Kernels_`
 
+> DISCLAMER
+> 
+>  This project utilizes AI in mostly wrriting Documetation and doing highly complex tasks that are important.
+>  This project is created by me and my friends but hosted under a single account.
+>  Since I do not have anyother PC/Laptop to test the kernel on diffrent hardware I cannot devlop for them.
+>  Currently the OS is not ready for baremetal running.
+>
+>  --Aarav90-cpu
+
 ## BootLoader
 
   - Shows ARKOS logo with white background
